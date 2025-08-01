@@ -1,10 +1,9 @@
-import { DefaultAgent, LocalEnvironment, OpenAIModel } from '../src';
+import { Agent, LocalEnvironment } from '../src';
 
 async function main() {
   // Initialize components
-  const model = new OpenAIModel(process.env.OPENAI_API_KEY!);
   const environment = new LocalEnvironment();
-  const agent = new DefaultAgent(model, environment, {
+  const agent = new Agent(environment, {
     verbose: true,
   });
 

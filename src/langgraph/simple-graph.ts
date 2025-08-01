@@ -139,10 +139,11 @@ export class SimpleWorkflowGraph {
       case 'initialize':
         return 'model';
 
-      case 'model':
+      case 'model': {
         // 使用路由节点决定
         const routerState = await this.nodes.get('router')!(state);
         return (routerState as any)._nextNode;
+      }
 
       case 'tools':
         return 'completion_check';

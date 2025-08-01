@@ -2,7 +2,7 @@ import { exec } from 'child_process';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { promisify } from 'util';
-import { Environment } from '../types';
+import { Environment } from './types';
 
 const execAsync = promisify(exec);
 

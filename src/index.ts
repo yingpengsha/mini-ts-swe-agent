@@ -3,9 +3,8 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import dotenv from 'dotenv';
-import { DefaultAgent } from './core/agent';
-import { LocalEnvironment } from './core/environment';
-import { OpenAIModel, LiteLLMModel } from './core/model';
+import { LangGraphAgent } from './langgraph';
+import { LocalEnvironment } from './environment';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -33,16 +32,14 @@ program
   .description('Run the agent with a specific task')
   .option('-m, --model <model>', 'Model to use (default: gpt-4-turbo-preview)', 'gpt-4-turbo-preview')
   .option('--api-key <key>', 'API key (can also use OPENAI_API_KEY env var)')
-  .option('--base-url <url>', 'Base URL for LiteLLM')
   .option('--max-iterations <n>', 'Maximum iterations', parseInt, 30)
   .option('--no-verbose', 'Disable verbose output')
   .option('-d, --directory <dir>', 'Working directory', process.cwd())
   .action(async (task, options) => {
     try {
-      console.log(chalk.blue('\n🤖 Mini TypeScript SWE Agent\n'));
+      console.log(chalk.blue('\n🤖 Mini TypeScript SWE Agent (LangGraph)\n'));
 
-      // Initialize model
-      let model;
+      // Check API key
       const apiKey = options.apiKey || process.env.OPENAI_API_KEY;
       
       if (!apiKey) {
@@ -50,33 +47,17 @@ program
         process.exit(1);
       }
 
-      if (options.baseUrl) {
-        model = new LiteLLMModel(options.baseUrl, apiKey, options.model);
-      } else {
-        model = new OpenAIModel(apiKey, options.model);
-      }
-
       // Initialize environment
       const environment = new LocalEnvironment(options.directory);
 
-      // Create and run agent (choose implementation)
-      const useNewImplementation = process.env.USE_LANGGRAPH === 'true';
-      
-      if (useNewImplementation) {
-        const { LangGraphAgent } = await import('./langgraph');
-        const agent = new LangGraphAgent(environment, {
-          maxIterations: options.maxIterations,
-          verbose: options.verbose,
-          model: options.model,
-        });
-        await agent.run(task);
-      } else {
-        const agent = new DefaultAgent(model, environment, {
-          maxIterations: options.maxIterations,
-          verbose: options.verbose,
-        });
-        await agent.run(task);
-      }
+      // Create and run agent
+      const agent = new LangGraphAgent(environment, {
+        maxIterations: options.maxIterations,
+        verbose: options.verbose,
+        model: options.model,
+      });
+
+      await agent.run(task);
       
       console.log(chalk.green('\n✨ Task completed!\n'));
     } catch (error) {
@@ -91,9 +72,8 @@ program
   .description('Run the agent in interactive mode')
   .option('-m, --model <model>', 'Model to use', 'gpt-4-turbo-preview')
   .option('--api-key <key>', 'API key (can also use OPENAI_API_KEY env var)')
-  .option('--base-url <url>', 'Base URL for LiteLLM')
   .action(async (options) => {
-    console.log(chalk.blue('\n🤖 Mini TypeScript SWE Agent - Interactive Mode\n'));
+    console.log(chalk.blue('\n🤖 Mini TypeScript SWE Agent - Interactive Mode (LangGraph)\n'));
     console.log(chalk.gray('Type your task and press Enter. Type "exit" to quit.\n'));
 
     const readline = await import('readline');
@@ -103,19 +83,12 @@ program
       prompt: chalk.cyan('Task> '),
     });
 
-    // Initialize model
-    let model;
+    // Check API key
     const apiKey = options.apiKey || process.env.OPENAI_API_KEY;
     
     if (!apiKey) {
       console.error(chalk.red('Error: API key is required. Set OPENAI_API_KEY or use --api-key'));
       process.exit(1);
-    }
-
-    if (options.baseUrl) {
-      model = new LiteLLMModel(options.baseUrl, apiKey, options.model);
-    } else {
-      model = new OpenAIModel(apiKey, options.model);
     }
 
     const environment = new LocalEnvironment(process.cwd());
@@ -132,21 +105,11 @@ program
 
       if (task) {
         try {
-          const useNewImplementation = process.env.USE_LANGGRAPH === 'true';
-          
-          if (useNewImplementation) {
-            const { LangGraphAgent } = await import('./langgraph');
-            const agent = new LangGraphAgent(environment, {
-              verbose: true,
-              model: options.model,
-            });
-            await agent.run(task);
-          } else {
-            const agent = new DefaultAgent(model, environment, {
-              verbose: true,
-            });
-            await agent.run(task);
-          }
+          const agent = new LangGraphAgent(environment, {
+            verbose: true,
+            model: options.model,
+          });
+          await agent.run(task);
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           console.error(chalk.red(`Error: ${errorMessage}`));
@@ -158,14 +121,13 @@ program
   });
 
 // Export for programmatic use
-export { DefaultAgent } from './core/agent';
-export { LocalEnvironment } from './core/environment';
-export { OpenAIModel, LiteLLMModel } from './core/model';
+export { LangGraphAgent as Agent } from './langgraph';
+export { LocalEnvironment } from './environment';
 export * from './types';
-
-// Export LangGraph implementation
-export { LangGraphAgent } from './langgraph';
 export * from './langgraph/types';
+
+// Re-export tools
+export { bashTool, editorTool } from './tools';
 
 // Run CLI if called directly
 if (require.main === module) {

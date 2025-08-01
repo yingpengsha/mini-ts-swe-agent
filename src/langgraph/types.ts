@@ -1,5 +1,4 @@
 import { BaseMessage } from '@langchain/core/messages';
-import { ToolArguments, Tool } from '../types';
 
 // LangGraph 状态定义
 export interface AgentState {

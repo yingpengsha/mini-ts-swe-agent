@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { LangGraphAgent } from '../src/langgraph';
-import { LocalEnvironment } from '../src/core/environment';
+import { Agent } from '../src';
+import { LocalEnvironment } from '../src/environment';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -17,7 +17,7 @@ vi.mock('@langchain/openai', () => ({
   })),
 }));
 
-describe('LangGraphAgent', () => {
+describe('Agent', () => {
   let tempDir: string;
   let environment: LocalEnvironment;
   let agent: LangGraphAgent;
@@ -28,7 +28,7 @@ describe('LangGraphAgent', () => {
     environment = new LocalEnvironment(tempDir);
     
     // Create agent with mocked dependencies
-    agent = new LangGraphAgent(environment, {
+    agent = new Agent(environment, {
       verbose: false,
       maxIterations: 5,
       model: 'gpt-4-turbo-preview',
@@ -42,18 +42,18 @@ describe('LangGraphAgent', () => {
 
   describe('initialization', () => {
     it('should create agent with default config', () => {
-      const defaultAgent = new LangGraphAgent(environment);
-      expect(defaultAgent).toBeInstanceOf(LangGraphAgent);
+      const defaultAgent = new Agent(environment);
+      expect(defaultAgent).toBeInstanceOf(Agent);
     });
 
     it('should create agent with custom config', () => {
-      const customAgent = new LangGraphAgent(environment, {
+      const customAgent = new Agent(environment, {
         maxIterations: 10,
         temperature: 0.5,
         verbose: true,
         model: 'gpt-3.5-turbo',
       });
-      expect(customAgent).toBeInstanceOf(LangGraphAgent);
+      expect(customAgent).toBeInstanceOf(Agent);
     });
   });
 
@@ -67,7 +67,7 @@ describe('LangGraphAgent', () => {
 
     it('should handle errors gracefully', async () => {
       // Create agent with error-prone config
-      const errorAgent = new LangGraphAgent(environment, {
+      const errorAgent = new Agent(environment, {
         verbose: false,
         maxIterations: 1, // Very low to trigger max iterations
       });

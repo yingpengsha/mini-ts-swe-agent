@@ -1,18 +1,17 @@
 # Mini TypeScript SWE Agent
 
-A minimal TypeScript implementation of an AI agent for solving software engineering tasks. Inspired by [SWE-agent/mini-swe-agent](https://github.com/SWE-agent/mini-swe-agent).
+A minimal TypeScript implementation of an AI agent for solving software engineering tasks, built with LangChain/LangGraph for advanced state management and workflow control.
 
 ## Features
 
 - 🤖 AI-powered software engineering agent
 - 🛠️ Built-in tools for bash commands and file editing
-- 🔄 Support for OpenAI and LiteLLM models
+- 🔄 LangChain/LangGraph workflow engine
 - 📝 TypeScript with full type safety
-- 🎯 Simple and extensible architecture
+- 🌊 Streaming execution with real-time state monitoring
+- 📊 Advanced state management and debugging
+- 🔧 Modular node-based architecture
 - 🚀 CLI and programmatic API
-- 🌊 **NEW**: LangGraph-based workflow with streaming support
-- 📊 **NEW**: Advanced state management and debugging
-- 🔧 **NEW**: Modular node-based architecture
 
 ## Installation
 
@@ -39,23 +38,11 @@ npx mini-ts-swe-agent interactive
 
 ### Programmatic Usage
 
-#### Original Implementation
 ```typescript
-import { DefaultAgent, LocalEnvironment, OpenAIModel } from 'mini-ts-swe-agent';
-
-const model = new OpenAIModel(process.env.OPENAI_API_KEY!);
-const environment = new LocalEnvironment();
-const agent = new DefaultAgent(model, environment);
-
-await agent.run('Write a function to calculate fibonacci numbers');
-```
-
-#### LangGraph Implementation (Recommended)
-```typescript
-import { LangGraphAgent, LocalEnvironment } from 'mini-ts-swe-agent';
+import { Agent, LocalEnvironment } from 'mini-ts-swe-agent';
 
 const environment = new LocalEnvironment();
-const agent = new LangGraphAgent(environment, {
+const agent = new Agent(environment, {
   model: 'gpt-4-turbo-preview',
   maxIterations: 30,
   verbose: true,
@@ -64,11 +51,15 @@ const agent = new LangGraphAgent(environment, {
 await agent.run('Write a function to calculate fibonacci numbers');
 ```
 
-#### Streaming Execution
+### Streaming Execution
+
 ```typescript
 // Monitor execution in real-time
 for await (const state of agent.runStream(task)) {
   console.log(`Step ${state.iterations}: ${state.messages.length} messages`);
+  if (state.isComplete) {
+    console.log('Task completed!');
+  }
 }
 ```
 
@@ -78,42 +69,47 @@ for await (const state of agent.runStream(task)) {
 
 - `-m, --model <model>`: Model to use (default: gpt-4-turbo-preview)
 - `--api-key <key>`: API key (can also use OPENAI_API_KEY env var)
-- `--base-url <url>`: Base URL for LiteLLM
 - `--max-iterations <n>`: Maximum iterations (default: 30)
 - `--no-verbose`: Disable verbose output
 - `-d, --directory <dir>`: Working directory
 
-### Using LiteLLM
-
-```bash
-npx mini-ts-swe-agent run "Your task" --base-url http://localhost:8000 --model claude-3
-```
-
-### Using LangGraph Implementation
-
-```bash
-# Enable the new LangGraph-based implementation
-USE_LANGGRAPH=true npx mini-ts-swe-agent run "Your task"
-```
-
 ## Architecture
 
-### Original Architecture
-The agent follows a simple architecture:
-- **Agent**: Orchestrates the task execution
-- **Model**: Handles LLM interactions (OpenAI/LiteLLM)
-- **Environment**: Manages file system and command execution
-- **Tools**: Provides capabilities (bash, file editor)
+The agent uses a node-based workflow powered by LangGraph:
 
-### LangGraph Architecture (New)
-Enhanced node-based workflow:
-- **State Management**: Structured state with full history
-- **Node-based Flow**: Modular, testable workflow nodes
-- **Tool Integration**: LangChain-compatible tool system
-- **Streaming Support**: Real-time state monitoring
-- **Advanced Debugging**: Per-node execution tracking
+### Workflow Nodes
 
-See [LangGraph Refactor Documentation](docs/langgraph-refactor.md) for detailed comparison.
+- **Initialize**: Sets up system prompt and initial state
+- **Model**: Calls LLM to generate responses and tool calls
+- **Tools**: Executes bash commands or file operations
+- **Completion Check**: Determines if the task is complete
+- **Router**: Decides the next node based on current state
+
+### State Management
+
+```typescript
+interface AgentState {
+  messages: BaseMessage[];      // Full conversation history
+  task: string;                // Current task
+  iterations: number;          // Iteration count
+  maxIterations: number;       // Maximum allowed iterations
+  isComplete: boolean;         // Task completion flag
+  lastToolResult?: string;     // Last tool execution result
+  error?: string;              // Error information
+}
+```
+
+### Built-in Tools
+
+1. **Bash Tool**: Execute shell commands
+   - Run scripts
+   - Manage packages
+   - System operations
+
+2. **Editor Tool**: File operations
+   - `view`: Read file contents with line numbers
+   - `create`: Create new files
+   - `str_replace`: Replace text in files
 
 ## Development
 
@@ -135,17 +131,13 @@ pnpm typecheck
 
 # Linting
 pnpm lint
-
-# Test both implementations
-USE_LANGGRAPH=false pnpm test  # Original
-USE_LANGGRAPH=true pnpm test   # LangGraph
 ```
 
 ## Documentation
 
-- [Agent Workflow](docs/agent-workflow.md) - Core workflow documentation
+- [Agent Workflow](docs/agent-workflow.md) - Detailed workflow documentation
 - [Architecture](docs/architecture.md) - System architecture overview  
-- [LangGraph Refactor](docs/langgraph-refactor.md) - New implementation details
+- [LangGraph Implementation](docs/langgraph-implementation.md) - Implementation details
 
 ## License
 

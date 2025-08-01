@@ -1,6 +1,6 @@
 import { BaseMessage, HumanMessage, AIMessage, SystemMessage } from '@langchain/core/messages';
 import { ChatOpenAI } from '@langchain/openai';
-import { AgentState, NodeInput, NodeOutput, ToolExecutionResult } from './types';
+import { AgentState, NodeInput, NodeOutput } from './types';
 import { createLangChainTools } from './tools';
 import { Environment } from '../types';
 
