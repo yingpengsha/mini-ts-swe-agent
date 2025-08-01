@@ -59,13 +59,24 @@ program
       // Initialize environment
       const environment = new LocalEnvironment(options.directory);
 
-      // Create and run agent
-      const agent = new DefaultAgent(model, environment, {
-        maxIterations: options.maxIterations,
-        verbose: options.verbose,
-      });
-
-      await agent.run(task);
+      // Create and run agent (choose implementation)
+      const useNewImplementation = process.env.USE_LANGGRAPH === 'true';
+      
+      if (useNewImplementation) {
+        const { LangGraphAgent } = await import('./langgraph');
+        const agent = new LangGraphAgent(environment, {
+          maxIterations: options.maxIterations,
+          verbose: options.verbose,
+          model: options.model,
+        });
+        await agent.run(task);
+      } else {
+        const agent = new DefaultAgent(model, environment, {
+          maxIterations: options.maxIterations,
+          verbose: options.verbose,
+        });
+        await agent.run(task);
+      }
       
       console.log(chalk.green('\n✨ Task completed!\n'));
     } catch (error) {
@@ -121,10 +132,21 @@ program
 
       if (task) {
         try {
-          const agent = new DefaultAgent(model, environment, {
-            verbose: true,
-          });
-          await agent.run(task);
+          const useNewImplementation = process.env.USE_LANGGRAPH === 'true';
+          
+          if (useNewImplementation) {
+            const { LangGraphAgent } = await import('./langgraph');
+            const agent = new LangGraphAgent(environment, {
+              verbose: true,
+              model: options.model,
+            });
+            await agent.run(task);
+          } else {
+            const agent = new DefaultAgent(model, environment, {
+              verbose: true,
+            });
+            await agent.run(task);
+          }
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : String(error);
           console.error(chalk.red(`Error: ${errorMessage}`));
@@ -140,6 +162,10 @@ export { DefaultAgent } from './core/agent';
 export { LocalEnvironment } from './core/environment';
 export { OpenAIModel, LiteLLMModel } from './core/model';
 export * from './types';
+
+// Export LangGraph implementation
+export { LangGraphAgent } from './langgraph';
+export * from './langgraph/types';
 
 // Run CLI if called directly
 if (require.main === module) {
